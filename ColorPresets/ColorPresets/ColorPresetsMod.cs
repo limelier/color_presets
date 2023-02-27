@@ -1,4 +1,6 @@
 using SpaceWarp.API.Mods;
+using HarmonyLib;
+using TMPro;
 using UnityEngine;
 
 namespace ColorPresets;
@@ -6,89 +8,62 @@ namespace ColorPresets;
 [MainMod]
 public class ColorPresetsMod : Mod
 {
-    private static readonly GUIStyle ColorBoxStyle = new()
-        { normal = new GUIStyleState { background = new Texture2D(20, 10) } };
-
-    private const int WindowWidth = 350;
-    private const int WindowHeight = 700;
-
-    private Rect _windowRect = new(
-        Screen.width * 0.85f - WindowWidth / 2f,
-        Screen.height / 2 - WindowHeight / 2,
-        0,
-        0
-    );
-
-    private bool _drawUI;
-
     public override void OnInitialized()
     {
         Logger.Info("Color Presets is initialized");
     }
-
-    private void OnGUI()
-    {
-        if (_drawUI)
-        {
-            _windowRect = GUILayout.Window(
-                GUIUtility.GetControlID(FocusType.Passive),
-                _windowRect,
-                FillWindow,
-                "Color Manager",
-                GUILayout.Height(WindowHeight),
-                GUILayout.Width(WindowWidth)
-            );
-        }
-    }
-
-    private void Update()
-    {
-        if (Input.GetKey(KeyCode.LeftAlt) && Input.GetKeyDown(KeyCode.Semicolon))
-            _drawUI = !_drawUI;
-    }
-
-    private void FillWindow(int windowID)
-    {
-        GUILayout.BeginVertical();
-
-        GUILayout.Button("Add preset");
-
-        DrawPreset(new ColorPreset(new Color(1, 0, 0, 1), new Color(0, 1, 0, 1)));
-        DrawPreset(new ColorPreset(new Color(0, 0, 1, 1), new Color(1, 1, 0, 1)));
-
-        GUILayout.EndVertical();
-        GUI.DragWindow(new Rect(0, 0, 10000, 500));
-    }
-
-    private static void DrawPreset(ColorPreset preset)
-    {
-        GUILayout.BeginHorizontal();
-
-        DrawColorBox(preset.Primary);
-        DrawColorBox(preset.Secondary);
-        GUILayout.Button("Use");
-        GUILayout.Button("Delete");
-
-        GUILayout.EndHorizontal();
-    }
-
-    private static void DrawColorBox(Color color)
-    {
-        var old = GUI.backgroundColor;
-        GUI.backgroundColor = color;
-        GUILayout.Box(GUIContent.none, ColorBoxStyle);
-        GUI.backgroundColor = old;
-    }
 }
 
-public class ColorPreset
+[HarmonyPatch(typeof(KSP.OAB.ObjectAssemblyColorPicker))]
+[HarmonyPatch("Start")]
+class ColorPickerPatcher
 {
-    public Color Primary;
-    public Color Secondary;
-
-    public ColorPreset(Color primary, Color secondary)
+    public static void Postfix(KSP.OAB.ObjectAssemblyColorPicker __instance)
     {
-        Primary = primary;
-        Secondary = secondary;
+        // resize the window; TODO: make scrolling instead
+        var rootTransform = (RectTransform) __instance.transform;
+        rootTransform.sizeDelta += new Vector2(0, 150);
+        
+        // create a copy of the agency colors buttons to use for the preset
+        var bodyTransform = __instance.transform.FindChildEx("UIPanel").FindChildEx("GRP-Body");
+        var agencyColorsButtons = bodyTransform.FindChildEx("Agency Colors Buttons");
+        var preset = UnityEngine.Object.Instantiate(agencyColorsButtons.gameObject, bodyTransform);
+        preset.name = "Color presets";
+        var presetTransform = (RectTransform) preset.transform;
+
+        // move the preset
+        presetTransform.SetSiblingIndex(agencyColorsButtons.GetSiblingIndex() + 1);
+        presetTransform.anchoredPosition += new Vector2(0, -150);
+        
+        // change the label
+        var label = presetTransform.FindChildEx("PartsManager-ELE-Property Name");
+        label.name = "Label";
+        label.GetComponent<TextMeshProUGUI>()
+            .SetText("Extra color presets");
+        label.SetSiblingIndex(0);
+        
+        // change the "set" button to "save new preset"
+        var saveButton = presetTransform.FindChildEx("BTN-SetAgencyColors");
+        saveButton.SetSiblingIndex(1);
+        saveButton.GetComponentInChildren<TextMeshProUGUI>()
+            .SetText("Save new preset");
+        saveButton.name = "BTN-SaveNewPreset";
+        
+        // move the colors
+        var presetContainer = presetTransform.FindChildEx("GRP-Agency Colors");
+        presetContainer.SetSiblingIndex(2);
+        presetContainer.name = "GRP-Preset";
+
+        // move the "restore" button to the colors, change it to "use"
+        var useButton = presetTransform.FindChildEx("BTN-RestoreAgencyColors");
+        useButton.SetParent(presetContainer);
+        useButton.SetSiblingIndex(3);
+        useButton.GetComponentInChildren<TextMeshProUGUI>().SetText("Use");
+        useButton.name = "BTN-Use";
+
+        var removeButton = UnityEngine.Object.Instantiate(useButton.gameObject, presetContainer);
+        removeButton.GetComponentInChildren<TextMeshProUGUI>().SetText("Del");
+        removeButton.name = "BTN-Delete";
     }
 }
+

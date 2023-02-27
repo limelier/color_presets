@@ -7,15 +7,6 @@
     <ImplicitUsings>true</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="..\external_dlls\SpaceWarp.dll" />
-    <Reference Include="..\external_dlls\UnityEngine.dll" />
-    <Reference Include="..\external_dlls\UnityEngine.CoreModule.dll" />
-    <Reference Include="..\external_dlls\UnityEngine.InputLegacyModule.dll" />
-    <Reference Include="..\external_dlls\Assembly-CSharp.dll" />
-    <Reference Include="..\external_dlls\NewtonSoft.Json.dll" />
-    <Reference Include="..\external_dlls\NewtonSoft.Json.dll" />
-    <Reference Include="UnityEngine.IMGUIModule">
-      <HintPath>..\external_dlls\UnityEngine.IMGUIModule.dll</HintPath>
-    </Reference>
+    <Reference Include="..\external_dlls\*.dll" />
   </ItemGroup>
 </Project>
