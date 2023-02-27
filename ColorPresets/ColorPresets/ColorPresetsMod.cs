@@ -25,20 +25,45 @@ class ColorPickerPatcher
             .FindChildEx("UIPanel")
             .FindChildEx("GRP-Body");
 
-        // squish the active colors
-        var squishBy = new Vector2(0, 80);
-        var activeColorContainer = body
-            .FindChildEx("GRP-Selected Colors")
-            .FindChildEx("GRP-ColorPreview-Hor");
-        ((RectTransform)activeColorContainer).sizeDelta -= squishBy;
+        SquishActiveColors(body);
+        SquishAgencyButtons(body);
+        CreatePresetsContainer(body);
+    }
 
-        // move everything else up to match; // TODO change body from LayoutElement to VerticalLayoutGroup?
-        MoveBy(body.FindChildEx("GRP-HueSlider"), squishBy);
-        MoveBy(body.FindChildEx("GRP-ColorPicker"), squishBy);
+    private static void CreatePresetsContainer(Transform body)
+    {
+        var presetsContainer = (RectTransform)Object.Instantiate(
+            body.FindChildEx("Agency Colors Buttons"),
+            body
+        );
+        presetsContainer.anchoredPosition += new Vector2(0, -70);
+        presetsContainer.name = "Extra Color Presets";
+
+        var presetsLabel = presetsContainer.FindChildEx("PartsManager-ELE-Property Name");
+        presetsLabel.name = "Label";
+        presetsLabel.GetComponent<TextMeshProUGUI>().SetText("Extra color presets");
+
+        var presetContainer = presetsContainer.FindChildEx("GRP-Agency Colors");
+        presetContainer.name = "GRP-Preset";
+
+        var useButton = presetContainer.FindChildEx("BTN-UseAgencyColors");
+        useButton.GetComponentInChildren<TextMeshProUGUI>().SetText("USE");
+        useButton.name = "BTN-Use";
+
+        var removeButton = presetContainer.FindChildEx("BTN-SetAgencyColors");
+        removeButton.GetComponentInChildren<TextMeshProUGUI>().SetText("DEL");
+        removeButton.name = "BTN-Delete";
+
+        var addButton = Object.Instantiate(removeButton, presetsContainer);
+        addButton.name = "BTN-Add Preset";
+        addButton.GetComponentInChildren<TextMeshProUGUI>().SetText("+");
+    }
+
+    private static void SquishAgencyButtons(Transform body)
+    {
         var agencyColorContainer = body.FindChildEx("Agency Colors Buttons");
-        MoveBy(agencyColorContainer, squishBy);
 
-        // edit the agency container
+        // delete extra spacing
         Object.Destroy(agencyColorContainer.FindChildEx("Div"));
 
         var horizontalContainer = agencyColorContainer.FindChildEx("GRP-Agency Colors");
@@ -53,6 +78,20 @@ class ColorPickerPatcher
         var setButton = agencyColorContainer.FindChildEx("BTN-SetAgencyColors");
         setButton.SetParent(horizontalContainer);
         setButton.GetComponentInChildren<TextMeshProUGUI>().SetText("SET");
+    }
+
+    private static void SquishActiveColors(Transform body)
+    {
+        var squishBy = new Vector2(0, 80);
+        var activeColorContainer = body
+            .FindChildEx("GRP-Selected Colors")
+            .FindChildEx("GRP-ColorPreview-Hor");
+        ((RectTransform)activeColorContainer).sizeDelta -= squishBy;
+
+        // move everything else up to match; // TODO change body from LayoutElement to VerticalLayoutGroup?
+        MoveBy(body.FindChildEx("GRP-HueSlider"), squishBy);
+        MoveBy(body.FindChildEx("GRP-ColorPicker"), squishBy);
+        MoveBy(body.FindChildEx("Agency Colors Buttons"), squishBy);
     }
 
     private static void MoveBy(Transform rect, Vector2 delta)
