@@ -1,7 +1,9 @@
 using SpaceWarp.API.Mods;
 using HarmonyLib;
+using KSP.UI.Binding;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
 namespace ColorPresets;
@@ -27,57 +29,6 @@ class ColorPickerPatcher
 
         SquishActiveColors(body);
         SquishAgencyButtons(body);
-        CreatePresetsContainer(body);
-    }
-
-    private static void CreatePresetsContainer(Transform body)
-    {
-        var presetsContainer = (RectTransform)Object.Instantiate(
-            body.FindChildEx("Agency Colors Buttons"),
-            body
-        );
-        presetsContainer.anchoredPosition += new Vector2(0, -70);
-        presetsContainer.name = "Extra Color Presets";
-
-        var presetsLabel = presetsContainer.FindChildEx("PartsManager-ELE-Property Name");
-        presetsLabel.name = "Label";
-        presetsLabel.GetComponent<TextMeshProUGUI>().SetText("Extra color presets");
-
-        var presetContainer = presetsContainer.FindChildEx("GRP-Agency Colors");
-        presetContainer.name = "GRP-Preset";
-
-        var useButton = presetContainer.FindChildEx("BTN-UseAgencyColors");
-        useButton.GetComponentInChildren<TextMeshProUGUI>().SetText("USE");
-        useButton.name = "BTN-Use";
-
-        var removeButton = presetContainer.FindChildEx("BTN-SetAgencyColors");
-        removeButton.GetComponentInChildren<TextMeshProUGUI>().SetText("DEL");
-        removeButton.name = "BTN-Delete";
-
-        var addButton = Object.Instantiate(removeButton, presetsContainer);
-        addButton.name = "BTN-Add Preset";
-        addButton.GetComponentInChildren<TextMeshProUGUI>().SetText("+");
-    }
-
-    private static void SquishAgencyButtons(Transform body)
-    {
-        var agencyColorContainer = body.FindChildEx("Agency Colors Buttons");
-
-        // delete extra spacing
-        Object.Destroy(agencyColorContainer.FindChildEx("Div"));
-
-        var horizontalContainer = agencyColorContainer.FindChildEx("GRP-Agency Colors");
-
-        // move and rename restore button (use)
-        var useButton = agencyColorContainer.FindChildEx("BTN-RestoreAgencyColors");
-        useButton.SetParent(horizontalContainer);
-        useButton.GetComponentInChildren<TextMeshProUGUI>().SetText("USE");
-        useButton.name = "BTN-UseAgencyColors";
-
-        // move and rename set button
-        var setButton = agencyColorContainer.FindChildEx("BTN-SetAgencyColors");
-        setButton.SetParent(horizontalContainer);
-        setButton.GetComponentInChildren<TextMeshProUGUI>().SetText("SET");
     }
 
     private static void SquishActiveColors(Transform body)
@@ -94,8 +45,31 @@ class ColorPickerPatcher
         MoveBy(body.FindChildEx("Agency Colors Buttons"), squishBy);
     }
 
+    private static void SquishAgencyButtons(Transform body)
+    {
+        var agencyColorContainer = body.FindChildEx("Agency Colors Buttons");
+
+        // delete extra spacing
+        Object.Destroy(agencyColorContainer.FindChildEx("Div").gameObject);
+
+        var horizontalContainer = agencyColorContainer.FindChildEx("GRP-Agency Colors");
+
+        // move and rename restore button (use)
+        var useButton = agencyColorContainer.FindChildEx("BTN-RestoreAgencyColors");
+        useButton.SetParent(horizontalContainer);
+        useButton.GetComponentInChildren<TextMeshProUGUI>().SetText("USE");
+        useButton.name = "BTN-UseAgencyColors";
+
+        // move and rename set button
+        var setButton = agencyColorContainer.FindChildEx("BTN-SetAgencyColors");
+        setButton.SetParent(horizontalContainer);
+        setButton.GetComponentInChildren<TextMeshProUGUI>().SetText("SET");
+    }
+
     private static void MoveBy(Transform rect, Vector2 delta)
     {
         ((RectTransform)rect).anchoredPosition += delta;
     }
 }
+
+record struct ColorPreset(Color Primary, Color Secondary);
